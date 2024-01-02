@@ -141,7 +141,6 @@ class Partner(ft.View):
     def send_message_click(self,e):
         # 拡張期のは/を付ける
         text = self.new_message.value
-        print(text)
         # command check
         index = text[:4].find('/')
         if index != -1:  # '/'が/見つかった場合
@@ -187,7 +186,6 @@ class Partner(ft.View):
         self.new_message.value = ""
         self.new_message.focus()
         self.update()
-        print(self.new_message.value)
 
 
     # ---------- header関数 ----------
@@ -276,7 +274,6 @@ def main(page: ft.Page):
     def on_keyboard(e: ft.KeyboardEvent):
         if (e.key == "Enter") and (e.shift == True) and (pt.send_btn.disabled == False):
             pt.send_message_click(e)
-            print('送信')
     page.on_keyboard_event = on_keyboard
     
 
