@@ -26,14 +26,17 @@ class ChatMessage(ft.Row):
                 icon_color = ft.colors.GREEN
 
         self.controls=[
-                ft.CircleAvatar(
-                    content=ft.Text(message.user_name[:1].capitalize()),
-                    color=ft.colors.WHITE,
-                    bgcolor=icon_color,
-                ),
                 ft.Column(
                     [
-                        ft.Text(message.user_name, weight="bold"),
+                        ft.Row(controls=[
+                            ft.CircleAvatar(
+                                content=ft.Text(message.user_name[:1].capitalize(),size=14),
+                                color=ft.colors.WHITE,
+                                bgcolor=icon_color,
+                                radius=12,
+                            ),
+                            ft.Text(message.user_name, weight="bold"),
+                        ]),
                         messages,
                     ],
                     tight=True,
@@ -56,11 +59,13 @@ class Partner(ft.View):
 
 
         # ---------- head ----------
-        self.main_title = ft.Text("gemini-pro")
+        self.main_title = ft.Text("gemini-pro",style=ft.TextThemeStyle.TITLE_MEDIUM)
+        self.main_icon = ft.Icon(name=ft.icons.TEXTSMS_OUTLINED, size=18)
         # head
         head_area = ft.Row(
             controls=[
-                self.main_title
+                self.main_title,
+                self.main_icon,
             ]
         )
 
@@ -70,7 +75,7 @@ class Partner(ft.View):
         # Chat messages
         self.chat = ft.ListView(
             expand=True,
-            spacing=10,
+            spacing=12,
             auto_scroll=True,
         )
         view_area = ft.Container(
@@ -84,7 +89,7 @@ class Partner(ft.View):
         # 入力の型
         # A new message entry form
         self.new_message = ft.TextField(
-            label="je/ ej/ j/ cm/ dc/ dh/",
+            label="command: je/ ej/ j/ cm/ dc/ dh/",
             autofocus=True,
             # shift_enter=True,
             multiline=True,
@@ -113,6 +118,8 @@ class Partner(ft.View):
                         icon=ft.icons.UPLOAD_FILE,
                         tooltip="Up file",
                         visible=False,
+                        selected=False,
+                        style=ft.ButtonStyle(color={"selected": ft.colors.BLUE, "": ft.colors.GREY_400}),
                         on_click=lambda _: self.pick_files_dialog.pick_files(
                             file_type='IMAGE',
                             ),
@@ -134,6 +141,7 @@ class Partner(ft.View):
     def send_message_click(self,e):
         # 拡張期のは/を付ける
         text = self.new_message.value
+        print(text)
         # command check
         index = text[:4].find('/')
         if index != -1:  # '/'が/見つかった場合
@@ -142,7 +150,7 @@ class Partner(ft.View):
             if command in self.lang_dict_keys:
                 self.on_message(Message('Katsumori', text, message_type="question"))
                 self.clear_message()
-
+                
                 answer = self.deepl.transform(command,text[index+1:])
                 self.on_message(Message('Deepl', answer, message_type="answer"))
                 return
@@ -173,12 +181,13 @@ class Partner(ft.View):
         self.send_btn.disabled = not self.send_btn.disabled
         m = ChatMessage(message)
         self.chat.controls.append(m)
-        self.clear_message()
+        self.update()
 
     def clear_message(self):
         self.new_message.value = ""
         self.new_message.focus()
         self.update()
+        print(self.new_message.value)
 
 
     # ---------- header関数 ----------
@@ -194,9 +203,11 @@ class Partner(ft.View):
             case "gemini-pro":
                 model_name = "gemini-pro-vision"
                 self.main_title.value = model_name
+                self.main_icon.name = ft.icons.IMAGE_SEARCH
             case "gemini-pro-vision":
                 model_name = "gemini-pro"
                 self.main_title.value = model_name
+                self.main_icon.name = ft.icons.TEXTSMS_OUTLINED
 
         self.gemini.change_model(model_name)
         self.file_btn.visible = not self.file_btn.visible
@@ -236,24 +247,39 @@ class Partner(ft.View):
         if img_flg:
             # text and image
             answer = self.gemini.run(text=text, file=self.img.read_img)
-            self.on_message(Message('Gemini', answer, message_type="answer"))
             self.img.read_img=None
         else:
             # text only
             answer = self.gemini.run(text)
-            self.on_message(Message('Gemini', answer, message_type="answer"))
+        self.on_message(Message('Gemini', answer, message_type="answer"))
 
     # fileのセット
     def pick_files_result(self,e: ft.FilePickerResultEvent):
         if e.files:
             self.img.get_img(e.files[0].path)
+            if self.img.read_img != None:
+                self.file_btn.selected = True
+            else:
+                self.file_btn.selected = False
+            self.update()
+
+    # shortcutの設定
 
 def main(page: ft.Page):
     # ---------- 画面の設定 ----------
     page.horizontal_alignment = "stretch"
     page.title = "Partner"
     page.update()
+    
     pt = Partner()
+    # shortcutの設定
+    def on_keyboard(e: ft.KeyboardEvent):
+        if (e.key == "Enter") and (e.shift == True) and (pt.send_btn.disabled == False):
+            pt.send_message_click(e)
+            print('送信')
+    page.on_keyboard_event = on_keyboard
+    
+
     # hide all dialogs in overlay
     page.overlay.extend([pt.pick_files_dialog])
     
