@@ -9,3 +9,5 @@ fletという簡単にデスクトップアプリやウェブアプリを作成�
 ## demo movie
 
 ![demo](./demo/ezgif.com-video-to-gif-converter.gif)
+
+[より詳しいデモはこちら]([http://qiita.com](https://youtu.be/sfqr9l-lUvU)https://youtu.be/sfqr9l-lUvU)
